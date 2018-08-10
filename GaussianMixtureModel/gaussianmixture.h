@@ -8,11 +8,12 @@ class GaussianMixture
 public:
     GaussianMixture(std::__cxx11::string filePath);
     GaussianMixture(int _numCluster, cv::Mat Img);
+    ~GaussianMixture();
     bool SaveTrainModel(std::string filePath);
     float classification(cv::Mat InputImg, cv::Mat &OutPutImg);
 private:
     cv::Ptr<cv::ml::EM> _EM;
-    cv::Scalar *color = new cv::Scalar(3);
+    cv::Scalar *color = new cv::Scalar[3];
 
 };
 

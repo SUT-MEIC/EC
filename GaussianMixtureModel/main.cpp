@@ -16,11 +16,12 @@ int main() {
     namedWindow(inputWinTitle, CV_WINDOW_AUTOSIZE);
     imshow(inputWinTitle, src);
 
-    GaussianMixture Text(5,src);
+    GaussianMixture Text("/home/nvidia/mycode/GaussianMixtureModel/Text");
 
     Mat outImg;
     Text.classification(src,outImg);
     imshow("out",outImg);
+    //Text.SaveTrainModel("/home/nvidia/mycode/GaussianMixtureModel/Text");
 
     waitKey(0);
     return 0;

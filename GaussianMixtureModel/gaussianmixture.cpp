@@ -5,7 +5,7 @@ GaussianMixture::GaussianMixture(int _numCluster,cv::Mat Img)
     int dims = Img.channels();
     int nSamples = Img.cols*Img.rows;
     cv::Mat ImgPoints(nSamples,dims,CV_64FC1);
-    color = new cv::Scalar(_numCluster);
+    color = new cv::Scalar[_numCluster];
     cv::RNG r;
     for(int i = 0; i < _numCluster; i++)
     {
@@ -34,11 +34,22 @@ GaussianMixture::GaussianMixture(int _numCluster,cv::Mat Img)
     _EM->trainEM(ImgPoints,cv::noArray(),cv::noArray(),cv::noArray());
 }
 
+GaussianMixture::~GaussianMixture()
+{
+    delete[] color;
+}
 
 
 GaussianMixture::GaussianMixture(std::string filePath)
 {
-    _EM->load(filePath);
+    _EM = cv::ml::EM::load(filePath);
+    int numCluster = _EM->getClustersNumber();
+    color = new cv::Scalar[numCluster];
+    cv::RNG r;
+    for(int i = 0; i < numCluster; i++)
+    {
+        color[i] = cv::Scalar(r.uniform(0,255),r.uniform(0,255),r.uniform(0,255));
+    }
 }
 
 bool GaussianMixture::SaveTrainModel(std::__cxx11::string filePath)
