@@ -63,7 +63,22 @@ float GaussianMixture::classification(cv::Mat InputImg,cv::Mat &OutPutImg)
     OutPutImg = cv::Mat::zeros(InputImg.size(),CV_8UC3);
     cv::Mat Samples(1,InputImg.channels(),CV_64FC1);
 
+   std::vector<cv::Mat> covs;
+    _EM->getCovs(covs);
+    for(size_t i = 0; i < covs.size(); i++)
+    {
+        std::cout<<covs[i]<<std::endl;
+    }
 
+    cv::Mat means;
+    means = _EM->getMeans();
+
+    std::cout<<means<<std::endl;
+
+    cv::Mat weights;
+    weights = _EM->getWeights();
+
+    std::cout<<weights<<std::endl;
     //cv::Scalar color[3] = {cv::Scalar(255,255,255),cv::Scalar(0,125,0),cv::Scalar(0,0,0)};
 
     double time = cv::getTickCount();
@@ -87,4 +102,75 @@ float GaussianMixture::classification(cv::Mat InputImg,cv::Mat &OutPutImg)
     time = (cv::getTickCount() - time)/cv::getTickFrequency()*1000;
     std::cout << "Time(ms) = "<< time <<std::endl;
     return time;
+}
+
+int GaussianMixture::FastClassification(cv::Mat InputImg, cv::Mat &OutPutImg)
+{
+    OutPutImg = cv::Mat::zeros(InputImg.size(),CV_8UC3);
+
+    int ClustersNumber = _EM->getClustersNumber();
+
+    std::vector<cv::Mat> Covs;
+    _EM->getCovs(Covs);
+
+    cv::Mat Var(ClustersNumber,3,CV_64FC1);
+
+
+    for(int i = 0; i < ClustersNumber; i++)
+    {
+        double a = std::sqrt(Covs[i].at<double>(0,0));
+        double b = std::sqrt(Covs[i].at<double>(1,1));
+        double c = std::sqrt(Covs[i].at<double>(2,2));
+
+        std::cout<<a<<" "<<b<<" "<<c<<std::endl;
+
+        Var.at<double>(i,0) = a;
+        Var.at<double>(i,1) = b;
+        Var.at<double>(i,2) = c;
+
+    }
+
+    std::cout<<Var<<std::endl;
+
+    cv::Mat Means;
+    Means = _EM->getMeans();
+    std::cout<<Means<<std::endl;
+
+    float D = 2.5;
+
+    double time = cv::getTickCount();
+    for(int i = 0; i < InputImg.rows; i++)
+    {
+        unsigned char* InputImgData = InputImg.ptr<unsigned char>(i);
+        unsigned char* OutPutImgData = OutPutImg.ptr<unsigned char>(i);
+        for(int j = 0; j < InputImg.cols*InputImg.channels(); j+=3)
+        {
+            for(int k = 0; k < ClustersNumber; k++)
+            {
+                int B = InputImgData[j];
+                int G = InputImgData[j+1];
+                int R = InputImgData[j+2];
+
+                float diffrenceB = 0.0,diffrenceG = 0.0,diffrenceR = 0.0;
+
+                diffrenceB = fabs(B - Means.at<double>(k,0));
+                diffrenceG = fabs(G - Means.at<double>(k,1));
+                diffrenceR = fabs(R - Means.at<double>(k,2));
+
+//                std::cout<<"DB = "<<diffrenceB<<" DG = "<<diffrenceG<<" DR = "<<diffrenceR<<std::endl;
+
+                if(diffrenceB < D*Var.at<double>(k,0) && diffrenceG < D*Var.at<double>(k,1) && diffrenceR < D*Var.at<double>(k,2))
+                {
+                    cv::Scalar c = color[k];
+                    OutPutImgData[j] = c[0];
+                    OutPutImgData[j+1] = c[1];
+                    OutPutImgData[j+2] = c[2];
+                    continue;
+                }
+            }
+        }
+    }
+    time = (cv::getTickCount() - time)/cv::getTickFrequency()*1000;
+    std::cout << "Time(ms) = "<< time <<std::endl;
+    return 0;
 }
